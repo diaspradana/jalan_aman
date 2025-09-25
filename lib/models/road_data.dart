@@ -27,18 +27,12 @@ class RoadData {
 /// ✅ Inheritance
 class JalanUtama extends RoadData {
   JalanUtama({
-    required int no,
-    required String namaJalan,
-    required String jenisKerusakan,
-    String detail = "",
-    String status = "Belum Ditinjau",
-  }) : super(
-          no: no,
-          namaJalan: namaJalan,
-          jenisKerusakan: jenisKerusakan,
-          detail: detail,
-          status: status,
-        );
+    required super.no,
+    required super.namaJalan,
+    required super.jenisKerusakan,
+    super.detail,
+    super.status,
+  });
 
   // ✅ Polymorphism (override)
   @override
