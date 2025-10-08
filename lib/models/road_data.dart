@@ -4,6 +4,8 @@ class RoadData {
   String jenisKerusakan;
   String detail;
   String status;
+  double latitude;
+  double longitude;
 
   RoadData({
     required this.no,
@@ -11,6 +13,8 @@ class RoadData {
     required this.jenisKerusakan,
     this.detail = "",
     this.status = "Belum Ditinjau",
+    this.latitude = 0.0,
+    this.longitude = 0.0,
   });
 
   // ✅ Encapsulation (getter & setter)

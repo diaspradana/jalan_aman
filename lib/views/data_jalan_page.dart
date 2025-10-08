@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/road_data.dart';
-import 'login_page.dart';
-import 'dashboard_admin.dart';
+import '../widgets/custom_navbar.dart';
+import '../widgets/custom_sidebar.dart';
 
 class DataJalanPage extends StatefulWidget {
   const DataJalanPage({super.key});
@@ -11,8 +11,6 @@ class DataJalanPage extends StatefulWidget {
 }
 
 class _DataJalanPageState extends State<DataJalanPage> {
-  final TextEditingController _searchController = TextEditingController();
-
   final List<RoadData> dataJalan = [
     RoadData(
       no: 1,
@@ -41,22 +39,12 @@ class _DataJalanPageState extends State<DataJalanPage> {
   ];
 
   List<RoadData> filteredData = [];
+  String selectedMenu = "Data Jalan";
 
   @override
   void initState() {
     super.initState();
     filteredData = dataJalan;
-    _searchController.addListener(_filterData);
-  }
-
-  void _filterData() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      filteredData = dataJalan.where((jalan) {
-        return jalan.getNamaJalan.toLowerCase().contains(query) ||
-            jalan.getJenisKerusakan.toLowerCase().contains(query);
-      }).toList();
-    });
   }
 
   void _updateStatus(int index, String status) {
@@ -64,7 +52,13 @@ class _DataJalanPageState extends State<DataJalanPage> {
       filteredData[index].setStatus = status;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Data jalan '${filteredData[index].getNamaJalan}' diubah ke $status")),
+      SnackBar(
+        backgroundColor: Colors.black87,
+        content: Text(
+          "Data jalan '${filteredData[index].getNamaJalan}' diubah ke $status",
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
     );
   }
 
@@ -84,196 +78,250 @@ class _DataJalanPageState extends State<DataJalanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ Drawer sama dengan DashboardAdmin
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFF512F), Color(0xFFF09819)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Text("Dash UI", style: TextStyle(fontSize: 20, color: Colors.white)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text("Dashboard"),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const DashboardAdmin(username: "Admin")), // bisa diganti username login
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.traffic),
-              title: const Text("Data Jalan"),
-              onTap: () => Navigator.pop(context), // tetap di halaman ini
-            ),
-            ListTile(
-              leading: const Icon(Icons.analytics),
-              title: const Text("Statistik"),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text("Pengaturan"),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("Logout"),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                );
-              },
-            ),
-          ],
+      backgroundColor: const Color(0xFF1A1A2E),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // ✅ Desktop Layout
+            if (constraints.maxWidth > 1024) {
+              return Row(
+                children: [
+                  // 🔹 Sidebar di kiri
+                  CustomSidebar(
+                    selectedMenu: selectedMenu,
+                    onSelect: (menu) {
+                      setState(() => selectedMenu = menu);
+                    },
+                  ),
+
+                  // 🔹 Area utama (navbar + konten)
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // 🔹 Navbar di atas
+                        CustomNavbar(
+                          username: "Admin",
+                          notificationCount: 3,
+                          searchData:
+                              dataJalan.map((e) => e.namaJalan).toList(),
+                          onSearch: (query) {
+                            setState(() {
+                              filteredData = dataJalan.where((jalan) {
+                                return jalan.getNamaJalan
+                                        .toLowerCase()
+                                        .contains(query.toLowerCase()) ||
+                                    jalan.getJenisKerusakan
+                                        .toLowerCase()
+                                        .contains(query.toLowerCase());
+                              }).toList();
+                            });
+                          },
+                        ),
+
+                        // 🔹 Konten utama
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(24),
+                            child: _buildContent(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            // ✅ Mobile Layout
+            else {
+              return Column(
+                children: [
+                  CustomNavbar(
+                    username: "Admin",
+                    notificationCount: 3,
+                    searchData:
+                        dataJalan.map((e) => e.namaJalan).toList(),
+                    onSearch: (query) {
+                      setState(() {
+                        filteredData = dataJalan.where((jalan) {
+                          return jalan.getNamaJalan
+                                  .toLowerCase()
+                                  .contains(query.toLowerCase()) ||
+                              jalan.getJenisKerusakan
+                                  .toLowerCase()
+                                  .contains(query.toLowerCase());
+                        }).toList();
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: _buildContent(context),
+                    ),
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ),
+    );
+  }
 
-      // ✅ AppBar dengan gradient seperti DashboardAdmin
-      appBar: AppBar(
-        title: const Text("Data Jalan"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFFF512F), Color(0xFFF09819)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+  // 🔹 Konten utama Data Jalan
+  Widget _buildContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Data Jalan Rusak",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 🔹 Tabel Data Jalan
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A2E),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor:
+                  WidgetStateProperty.all(const Color(0xFFFFA726).withOpacity(0.2)),
+              columnSpacing: 24,
+              border: TableBorder.all(color: Colors.grey.withOpacity(0.3)),
+              columns: const [
+                DataColumn(
+                    label: Text("No.",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(
+                    label: Text("Nama Jalan",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(
+                    label: Text("Jenis Kerusakan",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(
+                    label: Text("Status",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(
+                    label: Text("Aksi",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+              ],
+              rows: List.generate(filteredData.length, (index) {
+                final jalan = filteredData[index];
+                return DataRow(cells: [
+                  DataCell(Text(jalan.no.toString(),
+                      style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(jalan.getNamaJalan,
+                      style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(jalan.getJenisKerusakan,
+                      style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(
+                    jalan.getStatus,
+                    style: TextStyle(
+                      color: _getStatusColor(jalan.getStatus),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )),
+                  DataCell(
+                    IconButton(
+                      icon: const Icon(Icons.info, color: Colors.orangeAccent),
+                      onPressed: () => _showDetailBottomSheet(context, jalan, index),
+                    ),
+                  ),
+                ]);
+              }),
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  // 🔹 BottomSheet Detail Jalan
+  void _showDetailBottomSheet(BuildContext context, RoadData jalan, int index) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A2E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // 🔎 Search Bar
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: "Cari jalan atau jenis kerusakan...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ✅ Card supaya tabel rapi
-            Expanded(
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(Colors.deepPurple.shade100),
-                    border: TableBorder.all(color: Colors.grey.shade300),
-                    columns: const [
-                      DataColumn(label: Text("NO.")),
-                      DataColumn(label: Text("Nama Jalan")),
-                      DataColumn(label: Text("Jenis Kerusakan")),
-                      DataColumn(label: Text("Status")),
-                      DataColumn(label: Text("Action")),
-                    ],
-                    rows: List.generate(filteredData.length, (index) {
-                      final jalan = filteredData[index];
-                      return DataRow(cells: [
-                        DataCell(Text(jalan.no.toString())),
-                        DataCell(Text(jalan.getNamaJalan)),
-                        DataCell(Text(jalan.getJenisKerusakan)),
-                        DataCell(
-                          Text(
-                            jalan.getStatus,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: _getStatusColor(jalan.getStatus),
-                            ),
-                          ),
-                        ),
-                        DataCell(
-                          IconButton(
-                            icon: const Icon(Icons.info, color: Colors.blue),
-                            onPressed: () {
-                              showModalBottomSheet(
-                                context: context,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                                ),
-                                builder: (_) {
-                                  return Container(
-                                    padding: const EdgeInsets.all(20),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          jalan.getNamaJalan,
-                                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Text("Jenis Kerusakan: ${jalan.getJenisKerusakan}"),
-                                        Text("Status: ${jalan.getStatus}"),
-                                        const SizedBox(height: 6),
-                                        Text("Detail: ${jalan.getDetail}"),
-                                        const SizedBox(height: 20),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                          children: [
-                                            ElevatedButton.icon(
-                                              icon: const Icon(Icons.check, color: Colors.white),
-                                              label: const Text("Setujui"),
-                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                _updateStatus(index, "Disetujui");
-                                              },
-                                            ),
-                                            ElevatedButton.icon(
-                                              icon: const Icon(Icons.close, color: Colors.white),
-                                              label: const Text("Tolak"),
-                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                _updateStatus(index, "Ditolak");
-                                              },
-                                            ),
-                                            ElevatedButton.icon(
-                                              icon: const Icon(Icons.visibility, color: Colors.white),
-                                              label: const Text("Tinjau"),
-                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                _updateStatus(index, "Ditinjau");
-                                              },
-                                            ),
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ]);
-                    }),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  height: 5,
+                  width: 60,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[600],
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+              Text(
+                jalan.getNamaJalan,
+                style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange),
+              ),
+              const SizedBox(height: 8),
+              Text("Jenis Kerusakan: ${jalan.getJenisKerusakan}",
+                  style: const TextStyle(color: Colors.white)),
+              Text("Status: ${jalan.getStatus}",
+                  style: const TextStyle(color: Colors.white70)),
+              const SizedBox(height: 8),
+              Text("Detail: ${jalan.getDetail}",
+                  style: const TextStyle(color: Colors.white)),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: const Text("Setujui"),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _updateStatus(index, "Disetujui");
+                    },
+                  ),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    label: const Text("Tolak"),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _updateStatus(index, "Ditolak");
+                    },
+                  ),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.visibility, color: Colors.white),
+                    label: const Text("Tinjau"),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _updateStatus(index, "Ditinjau");
+                    },
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 }
